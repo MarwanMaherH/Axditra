@@ -26,7 +26,10 @@ Most accessibility tools tell you what's wrong on your site. Axditra tells you w
 
 Every developer has run an accessibility scan, seen a wall of errors, and closed the tab — because the report told you *what* was wrong, never *how* to fix it. Axditra closes that gap.
 
-Building this in public. Follow along: [X](https://x.com/MarwanMaherH) · [LinkedIn](https://www.linkedin.com/in/marwanmaher)
+Building this in public. Follow along:
+[X](https://x.com/MarwanMaherH) 
+·
+[LinkedIn](https://www.linkedin.com/in/marwanmaher)
 
 ---
 
