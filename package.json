@@ -1,0 +1,18 @@
+{
+  "name": "axditra",
+  "version": "0.1.0",
+  "description": "Axditra — scan, explain, and fix accessibility issues in one sitting.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "playwright install chromium"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "axe-core": "^4.10.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "playwright": "^1.48.0"
+  }
+}

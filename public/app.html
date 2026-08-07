@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230B0C0E"/><circle cx="16" cy="16" r="11" fill="none" stroke="%23F3F4F1" stroke-width="2.2"/><path d="M11.3 16.5 L14.5 19.7 L20.7 11.3" fill="none" stroke="%23D9A25C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25.5" cy="9.8" r="2" fill="%23D9A25C"/></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axditra — Scan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0C0E;
+    --charcoal: #17191D;
+    --charcoal-2: #1E2126;
+    --steel: #7D8890;
+    --bone: #F3F4F1;
+    --gold: #D9A25C;
+    --gold-dim: rgba(217, 162, 92, 0.14);
+    --line: rgba(125, 136, 144, 0.18);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --critical: #E28C8C;
+    --serious: #E0A868;
+    --moderate: #D9C468;
+    --minor: #9AC48A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 20px 0;
+  }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: var(--font-display); font-size: 19px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .logo-mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .logo .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+
+  .hero { padding: 64px 0 40px; text-align: center; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.01em;
+    margin-bottom: 14px;
+  }
+  .hero p { color: var(--steel); font-size: 16px; max-width: 480px; margin: 0 auto; }
+
+  .scan-form {
+    display: flex;
+    gap: 10px;
+    max-width: 560px;
+    margin: 32px auto 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .scan-input {
+    flex: 1;
+    min-width: 260px;
+    background: var(--charcoal);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 14px 16px;
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    outline: none;
+  }
+  .scan-input:focus { border-color: var(--gold); }
+  .scan-btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    padding: 14px 24px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+  }
+  .scan-btn:hover { background: #e5ae68; }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--steel);
+    margin-top: 18px;
+    min-height: 18px;
+  }
+  .status.error { color: var(--critical); }
+
+  main { padding: 40px 0 100px; }
+
+  .score-panel {
+    display: none;
+    background: var(--charcoal);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 32px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .score-panel.show { display: flex; }
+  .score-num { font-family: var(--font-display); font-size: 52px; color: var(--gold); font-weight: 500; }
+  .score-num span { font-size: 24px; color: var(--steel); }
+  .score-meta { font-family: var(--font-mono); font-size: 13px; color: var(--steel); text-align: right; }
+  .score-meta strong { color: var(--bone); }
+
+  .issues { display: none; flex-direction: column; gap: 1px; }
+  .issues.show { display: flex; }
+
+  .issue-card {
+    background: var(--charcoal);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 14px;
+  }
+  .issue-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .issue-title { font-family: var(--font-body); font-weight: 600; font-size: 15.5px; }
+  .impact-badge {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .impact-critical { background: rgba(226,140,140,0.14); color: var(--critical); }
+  .impact-serious { background: rgba(224,168,104,0.14); color: var(--serious); }
+  .impact-moderate { background: rgba(217,196,104,0.14); color: var(--moderate); }
+  .impact-minor { background: rgba(154,196,138,0.14); color: var(--minor); }
+
+  .issue-desc { color: var(--steel); font-size: 14px; margin-bottom: 14px; }
+
+  .node-html {
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--steel);
+    overflow-x: auto;
+    white-space: pre;
+    margin-bottom: 12px;
+  }
+
+  .explain-btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid rgba(217,162,92,0.35);
+    padding: 9px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .explain-btn:hover { background: var(--gold-dim); }
+  .explain-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  .explanation {
+    display: none;
+    margin-top: 14px;
+  }
+  .explanation.show { display: block; }
+  .explain-text {
+    background: var(--gold-dim);
+    border-left: 2px solid var(--gold);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .fix-box {
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+    position: relative;
+  }
+  .fix-box pre {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: #A8C9A1;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    background: rgba(217,162,92,0.1);
+    border: 1px solid rgba(217,162,92,0.3);
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { background: rgba(217,162,92,0.2); }
+  .what-changed { font-family: var(--font-mono); font-size: 12px; color: var(--steel); margin-top: 8px; }
+
+  .empty-state {
+    display: none;
+    text-align: center;
+    padding: 60px 0;
+    color: var(--steel);
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+  .empty-state.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a href="index.html" class="logo"><svg class="logo-mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="#F3F4F1" stroke-width="2.2"/><path d="M11 16.5 L14.5 20 L21 11" fill="none" stroke="#D9A25C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26.4" cy="10" r="2" fill="#D9A25C"/></svg>Axditra</a>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1>Scan any page. Get the fix.</h1>
+  <p>Paste a URL below. We'll check it against WCAG 2.1 AA and hand you plain-language explanations plus ready-to-use fixes.</p>
+  <form class="scan-form" id="scanForm">
+    <input type="url" class="scan-input" id="urlInput" placeholder="https://example.com" required>
+    <button type="submit" class="scan-btn" id="scanBtn">Scan</button>
+  </form>
+  <div class="status" id="status"></div>
+</div>
+
+<main class="wrap">
+  <div class="score-panel" id="scorePanel">
+    <div>
+      <div class="score-num" id="scoreNum">—<span>/100</span></div>
+    </div>
+    <div class="score-meta">
+      <div><strong id="issueCount">0</strong> issues found</div>
+      <div id="scannedUrl"></div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">No issues found yet — scan a page above to get started.</div>
+
+  <div class="issues" id="issuesList"></div>
+</main>
+
+<script>
+  const form = document.getElementById('scanForm');
+  const urlInput = document.getElementById('urlInput');
+  const scanBtn = document.getElementById('scanBtn');
+  const status = document.getElementById('status');
+  const scorePanel = document.getElementById('scorePanel');
+  const scoreNum = document.getElementById('scoreNum');
+  const issueCount = document.getElementById('issueCount');
+  const scannedUrl = document.getElementById('scannedUrl');
+  const issuesList = document.getElementById('issuesList');
+  const emptyState = document.getElementById('emptyState');
+
+  const impactLabel = { critical: 'Critical', serious: 'Serious', moderate: 'Moderate', minor: 'Minor' };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = urlInput.value.trim();
+    scanBtn.disabled = true;
+    status.textContent = 'Scanning… this can take up to 30 seconds.';
+    status.className = 'status';
+    scorePanel.classList.remove('show');
+    issuesList.innerHTML = '';
+    issuesList.classList.remove('show');
+    emptyState.classList.remove('show');
+
+    try {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Scan failed.');
+
+      status.textContent = '';
+      renderResults(data);
+    } catch (err) {
+      status.textContent = err.message;
+      status.className = 'status error';
+    } finally {
+      scanBtn.disabled = false;
+    }
+  });
+
+  function renderResults(data) {
+    scoreNum.innerHTML = `${data.score}<span>/100</span>`;
+    issueCount.textContent = data.totalIssues;
+    scannedUrl.textContent = data.url;
+    scorePanel.classList.add('show');
+
+    if (data.violations.length === 0) {
+      emptyState.textContent = 'No violations found. This page passes the checks we ran.';
+      emptyState.classList.add('show');
+      return;
+    }
+
+    data.violations.forEach((violation, vi) => {
+      violation.nodes.forEach((node, ni) => {
+        const card = document.createElement('div');
+        card.className = 'issue-card';
+        const impact = violation.impact || 'moderate';
+        card.innerHTML = `
+          <div class="issue-head">
+            <div class="issue-title">${violation.help}</div>
+            <span class="impact-badge impact-${impact}">${impactLabel[impact] || impact}</span>
+          </div>
+          <div class="issue-desc">${violation.description}</div>
+          <div class="node-html">${escapeHtml(node.html)}</div>
+          <button class="explain-btn" data-vi="${vi}" data-ni="${ni}">Explain &amp; generate fix</button>
+          <div class="explanation" id="exp-${vi}-${ni}"></div>
+        `;
+        issuesList.appendChild(card);
+
+        card.querySelector('.explain-btn').addEventListener('click', (ev) =>
+          handleExplain(ev, violation, node, vi, ni)
+        );
+      });
+    });
+
+    issuesList.classList.add('show');
+  }
+
+  async function handleExplain(ev, violation, node, vi, ni) {
+    const btn = ev.currentTarget;
+    const target = document.getElementById(`exp-${vi}-${ni}`);
+    btn.disabled = true;
+    btn.textContent = 'Thinking…';
+
+    try {
+      const res = await fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ violation, node }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not generate a fix.');
+
+      target.innerHTML = `
+        <div class="explain-text">${escapeHtml(data.explanation)}</div>
+        <div class="fix-box">
+          <button class="copy-btn">Copy fix</button>
+          <pre>${escapeHtml(data.fixedHtml)}</pre>
+        </div>
+        <div class="what-changed">${escapeHtml(data.whatChanged)}</div>
+      `;
+      target.classList.add('show');
+      target.querySelector('.copy-btn').addEventListener('click', () => {
+        navigator.clipboard.writeText(data.fixedHtml);
+        const cb = target.querySelector('.copy-btn');
+        cb.textContent = 'Copied ✓';
+        setTimeout(() => (cb.textContent = 'Copy fix'), 1500);
+      });
+      btn.remove();
+    } catch (err) {
+      target.innerHTML = `<div class="explain-text" style="color:var(--critical); border-color:var(--critical);">${escapeHtml(err.message)}</div>`;
+      target.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Explain & generate fix';
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>

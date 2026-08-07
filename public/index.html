@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230B0C0E"/><circle cx="16" cy="16" r="11" fill="none" stroke="%23F3F4F1" stroke-width="2.2"/><path d="M11.3 16.5 L14.5 19.7 L20.7 11.3" fill="none" stroke="%23D9A25C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25.5" cy="9.8" r="2" fill="%23D9A25C"/></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axditra — From detection to Pull Request, in one sitting.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0C0E;
+    --charcoal: #17191D;
+    --charcoal-2: #1E2126;
+    --steel: #7D8890;
+    --bone: #F3F4F1;
+    --gold: #D9A25C;
+    --gold-dim: rgba(217, 162, 92, 0.14);
+    --line: rgba(125, 136, 144, 0.18);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  ::selection { background: var(--gold); color: var(--ink); }
+
+  /* ---------- NAV ---------- */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 12, 14, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: inline-block;
+  }
+  .logo-mark {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    font-size: 14px;
+    color: var(--steel);
+  }
+  .nav-links a:hover { color: var(--bone); }
+  .nav-cta {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--gold);
+    color: var(--ink);
+    padding: 10px 20px;
+    border-radius: 3px;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .nav-cta:hover { transform: translateY(-1px); background: #e5ae68; }
+
+  @media (max-width: 760px) {
+    .nav-links { display: none; }
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    padding: 96px 0 80px;
+    position: relative;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 64px;
+    align-items: center;
+  }
+  @media (max-width: 940px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(38px, 5.2vw, 60px);
+    line-height: 1.06;
+    letter-spacing: -0.015em;
+    margin-bottom: 26px;
+  }
+  h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--steel);
+    max-width: 480px;
+    margin-bottom: 36px;
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    font-weight: 600;
+    font-size: 15px;
+    background: var(--gold);
+    color: var(--ink);
+    padding: 15px 26px;
+    border-radius: 3px;
+    transition: transform 0.15s ease, background 0.15s ease;
+    display: inline-block;
+  }
+  .btn-primary:hover { transform: translateY(-1px); background: #e5ae68; }
+  .link-secondary {
+    font-size: 14px;
+    color: var(--steel);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .link-secondary:hover { color: var(--bone); border-color: var(--steel); }
+
+  .hero-note {
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--steel);
+    font-family: var(--font-mono);
+  }
+
+  /* ---------- SIGNATURE: TERMINAL DEMO ---------- */
+  .demo {
+    background: var(--charcoal);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .demo-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--charcoal-2);
+  }
+  .demo-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(125,136,144,0.35); }
+  .demo-title {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--steel);
+  }
+  .demo-body {
+    padding: 22px 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    min-height: 300px;
+  }
+  .demo-line {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+  .demo-line .tag {
+    flex-shrink: 0;
+    color: var(--steel);
+  }
+  .demo-line .val { color: var(--bone); }
+  .demo-line.err .val { color: #E9A6A6; }
+  .demo-line.gold .val { color: var(--gold); }
+  .demo-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 14px 0;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+  .demo-explain {
+    background: var(--gold-dim);
+    border-left: 2px solid var(--gold);
+    padding: 12px 14px;
+    margin: 6px 0 14px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--bone);
+    line-height: 1.55;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+  .demo-code {
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+    position: relative;
+  }
+  .demo-code .cf {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    background: rgba(217,162,92,0.1);
+    padding: 4px 9px;
+    border-radius: 3px;
+    border: 1px solid rgba(217,162,92,0.3);
+  }
+  .demo-code pre {
+    white-space: pre-wrap;
+    color: var(--steel);
+  }
+  .demo-code pre .add { color: #A8C9A1; display: block; }
+  .demo-code pre .rem { color: #C98080; display: block; text-decoration: line-through; opacity: 0.6; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* ---------- LOGO STRIP ---------- */
+  .against {
+    padding: 40px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .against-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--steel);
+    text-align: center;
+  }
+  .against-inner .sep { color: var(--line); }
+
+  /* ---------- POSITIONING ---------- */
+  section { padding: 100px 0; }
+  .section-head {
+    max-width: 640px;
+    margin-bottom: 60px;
+  }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  .section-lede {
+    color: var(--steel);
+    font-size: 16px;
+    margin-top: 18px;
+    line-height: 1.65;
+  }
+
+  .quadrant {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .qcell {
+    background: var(--charcoal);
+    padding: 34px 30px;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .qcell.hi {
+    background: linear-gradient(155deg, rgba(217,162,92,0.10), var(--charcoal) 60%);
+  }
+  .qcell-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--steel);
+  }
+  .qcell-names {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--steel);
+    line-height: 1.8;
+  }
+  .qcell-names.us {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--bone);
+    font-weight: 500;
+  }
+  .qcell-names.us .dot { color: var(--gold); }
+
+  .pitch-line {
+    margin-top: 44px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.55;
+    color: var(--bone);
+    border-left: 2px solid var(--gold);
+    padding-left: 24px;
+    max-width: 620px;
+  }
+  .pitch-line span { color: var(--steel); font-style: normal; font-size: 13px; font-family: var(--font-mono); display: block; margin-top: 10px; }
+
+  /* ---------- AUDIENCE ---------- */
+  .aud-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  @media (max-width: 860px) { .aud-grid { grid-template-columns: 1fr; } }
+  .aud-card {
+    background: var(--charcoal);
+    padding: 36px 30px;
+    transition: background 0.2s ease;
+  }
+  .aud-card:hover { background: var(--charcoal-2); }
+  .aud-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+  .aud-role {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .aud-msg {
+    color: var(--steel);
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps { display: flex; flex-direction: column; }
+  .step {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 28px;
+    padding: 34px 0;
+    border-top: 1px solid var(--line);
+  }
+  .steps .step:last-child { border-bottom: 1px solid var(--line); }
+  @media (max-width: 640px) { .step { grid-template-columns: 50px 1fr; } }
+  .step-num {
+    font-family: var(--font-display);
+    font-size: 34px;
+    color: var(--steel);
+    font-weight: 400;
+    opacity: 0.55;
+  }
+  .step-content h3 {
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .step-content p {
+    color: var(--steel);
+    font-size: 15px;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+  .step-flag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--gold);
+    background: var(--gold-dim);
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-top: 10px;
+  }
+
+  /* ---------- STORY ---------- */
+  .story {
+    background: var(--charcoal);
+    border-radius: 8px;
+    padding: 64px;
+    text-align: center;
+  }
+  @media (max-width: 700px) { .story { padding: 44px 26px; } }
+  .story blockquote {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(21px, 2.6vw, 30px);
+    line-height: 1.5;
+    color: var(--bone);
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  .story blockquote .accent { color: var(--gold); }
+  .story cite {
+    display: block;
+    margin-top: 26px;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 12px;
+    color: var(--steel);
+    letter-spacing: 0.04em;
+  }
+
+  /* ---------- WAITLIST ---------- */
+  .waitlist {
+    text-align: center;
+  }
+  .waitlist .section-head { margin: 0 auto 40px; text-align: center; }
+  .wl-form {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    max-width: 460px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+  }
+  .wl-input {
+    flex: 1;
+    min-width: 220px;
+    background: var(--charcoal);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 14px 16px;
+    color: var(--bone);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .wl-input:focus { border-color: var(--gold); }
+  .wl-input::placeholder { color: var(--steel); }
+  .wl-btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    padding: 14px 22px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .wl-btn:hover { transform: translateY(-1px); background: #e5ae68; }
+  .wl-note {
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--steel);
+    font-family: var(--font-mono);
+  }
+  .wl-success {
+    display: none;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--gold);
+    margin-top: 8px;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-inner .logo { font-size: 16px; }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: var(--steel);
+  }
+  .footer-links a:hover { color: var(--bone); }
+
+  /* focus visibility */
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; scroll-behavior: auto !important; }
+  }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a href="#" class="logo"><svg class="logo-mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="#F3F4F1" stroke-width="2.2"/><path d="M11 16.5 L14.5 20 L21 11" fill="none" stroke="#D9A25C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26.4" cy="10" r="2" fill="#D9A25C"/></svg>Axditra</a>
+      <div class="nav-links">
+        <a href="#positioning">Why us</a>
+        <a href="#how">How it works</a>
+        <a href="#audience">Who it's for</a>
+      </div>
+      <a href="#waitlist" class="nav-cta">Join the waitlist</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Accessibility, fixed — not just found</div>
+      <h1>From detection to Pull&nbsp;Request, <em>in one sitting.</em></h1>
+      <p class="hero-sub">Most tools stop at "here's your list of problems." Axditra scans your site, explains every issue in plain language, and writes the fix — so you go from broken to shipped without leaving the tab.</p>
+      <div class="hero-actions">
+        <a href="#waitlist" class="btn-primary">Join the waitlist</a>
+        <a href="app.html" class="link-secondary">Try the scan tool (dev preview) →</a>
+      </div>
+      <div class="hero-note">No sign-up for your first scan · Built for developers who'd rather ship than read documentation</div>
+    </div>
+
+    <div class="demo" aria-hidden="true">
+      <div class="demo-bar">
+        <span class="demo-dot"></span><span class="demo-dot"></span><span class="demo-dot"></span>
+        <span class="demo-title">axditra — scanning yoursite.com</span>
+      </div>
+      <div class="demo-body" id="demoBody"></div>
+    </div>
+  </div>
+</section>
+
+<div class="against">
+  <div class="wrap against-inner">
+    <span>Built to replace the gap left by</span>
+    <span class="sep">·</span><span>axe DevTools</span>
+    <span class="sep">·</span><span>WAVE</span>
+    <span class="sep">·</span><span>Lighthouse</span>
+  </div>
+</div>
+
+<section id="positioning">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Positioning</div>
+      <h2>Every other tool tells you what's wrong.</h2>
+      <p class="section-lede">Detection has been commoditized for years — any team can bolt on an accessibility scanner in an afternoon. What nobody else does is close the loop, from the moment a problem is found to the moment it's fixed in your codebase.</p>
+    </div>
+
+    <div class="quadrant reveal">
+      <div class="qcell">
+        <span class="qcell-label">Detection only</span>
+        <span class="qcell-names">axe DevTools<br>WAVE<br>Lighthouse</span>
+      </div>
+      <div class="qcell hi">
+        <span class="qcell-label">Detection + Fix</span>
+        <span class="qcell-names">— nobody, until now —</span>
+      </div>
+      <div class="qcell">
+        <span class="qcell-label">Low automation</span>
+        <span class="qcell-names">Manual audits<br>Consultant reports</span>
+      </div>
+      <div class="qcell hi">
+        <span class="qcell-label">High automation</span>
+        <span class="qcell-names us"><span class="dot">●</span> Axditra</span>
+      </div>
+    </div>
+
+    <p class="pitch-line reveal">"If axe DevTools is the doctor who diagnoses you, Axditra is the doctor who diagnoses you, writes the prescription, and hands it over ready to fill."</p>
+  </div>
+</section>
+
+<section id="audience">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Who it's for</div>
+      <h2>One product, three reasons to care.</h2>
+    </div>
+    <div class="aud-grid reveal">
+      <div class="aud-card">
+        <div class="aud-num">01</div>
+        <div class="aud-role">Solo developer</div>
+        <p class="aud-msg">Stop losing an afternoon to reading an accessibility report and translating it into code. Get the fix in the same breath as the finding.</p>
+      </div>
+      <div class="aud-card">
+        <div class="aud-num">02</div>
+        <div class="aud-role">Team lead / agency</div>
+        <p class="aud-msg">Let your whole team ship accessible code without needing an in-house WCAG expert on every project.</p>
+      </div>
+      <div class="aud-card">
+        <div class="aud-num">03</div>
+        <div class="aud-role">Founder / PM</div>
+        <p class="aud-msg">Cut your exposure to ADA and WCAG compliance risk, and let your team spend its time on features instead of remediation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">How it works</div>
+      <h2>Four steps. One sitting.</h2>
+      <p class="section-lede">This is a real sequence — each step depends on the one before it, and each one is designed to shorten the distance to your first "it's fixed."</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h3>Paste your URL — no sign-up</h3>
+          <p>We scan the live page against WCAG criteria and surface every issue, ranked by real-world impact.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h3>Get a transparent score</h3>
+          <p>Every score comes with the math behind it. No black box — you can see exactly why a page scored 91 and not 100.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <h3>Read the plain-language explanation</h3>
+          <p>AI explains what's actually wrong and who it affects — the tool doubles as a teacher, not just a checker.</p>
+          <span class="step-flag">Builds understanding, not just a checklist</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-content">
+          <h3>Copy the fix, or open a Pull Request</h3>
+          <p>Take the corrected code straight into your editor, or let Axditra open the PR for you.</p>
+          <span class="step-flag">The "wow" moment</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="story reveal">
+      <blockquote>"Accessibility has been treated for years as a boring checklist, put off until the last possible moment. <span class="accent">We're not adding another step to the process — we're removing the friction that made developers put it off in the first place.</span>"</blockquote>
+      <cite>— Why we're building Axditra</cite>
+    </div>
+  </div>
+</section>
+
+<section id="waitlist" class="waitlist">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">Get early access</div>
+      <h2>We're building this in public.</h2>
+      <p class="section-lede">Axditra is in active development. Join the waitlist and be one of the first to try the full scan-to-fix flow — plus get every build update as we ship it.</p>
+    </div>
+    <form class="wl-form reveal" id="wlForm">
+      <input type="email" class="wl-input" placeholder="you@example.com" required aria-label="Email address">
+      <button type="submit" class="wl-btn">Join the waitlist</button>
+    </form>
+    <div class="wl-success" id="wlSuccess">You're on the list. We'll email you the moment early access opens.</div>
+    <p class="wl-note">No spam. Just build updates and your invite when it's ready.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <a href="#" class="logo"><svg class="logo-mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="#F3F4F1" stroke-width="2.2"/><path d="M11 16.5 L14.5 20 L21 11" fill="none" stroke="#D9A25C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26.4" cy="10" r="2" fill="#D9A25C"/></svg>Axditra</a>
+    <div class="footer-links">
+      <a href="#positioning">Why us</a>
+      <a href="#how">How it works</a>
+      <a href="#waitlist">Waitlist</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => io.observe(el));
+
+  // Waitlist form — posts to the real backend
+  const form = document.getElementById('wlForm');
+  const success = document.getElementById('wlSuccess');
+  const emailInput = form.querySelector('.wl-input');
+  const submitBtn = form.querySelector('.wl-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = emailInput.value.trim();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Joining…';
+
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+      form.style.display = 'none';
+      success.textContent = data.alreadyOnList
+        ? "You're already on the list — we'll email you the moment early access opens."
+        : "You're on the list. We'll email you the moment early access opens.";
+      success.style.display = 'block';
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Join the waitlist';
+      alert(err.message);
+    }
+  });
+
+  // Demo terminal sequence
+  const demoBody = document.getElementById('demoBody');
+  const sequence = [
+    { type: 'line', tag: '$', val: 'scanning yoursite.com/checkout', cls: '' },
+    { type: 'line', tag: '→', val: '14 issues found · 3 critical', cls: 'err' },
+    { type: 'divider' },
+    { type: 'line', tag: '#7', val: 'Score: 91/100', cls: 'gold' },
+    { type: 'explain', text: '<strong style="color:var(--gold)">Issue:</strong> Button has no accessible name. Screen reader users hear only "button" — they can\'t tell what it does.' },
+    { type: 'code' },
+  ];
+
+  let i = 0;
+  function next() {
+    if (i >= sequence.length) return;
+    const item = sequence[i];
+    let el;
+    if (item.type === 'line') {
+      el = document.createElement('div');
+      el.className = 'demo-line ' + item.cls;
+      el.innerHTML = `<span class="tag">${item.tag}</span><span class="val">${item.val}</span>`;
+    } else if (item.type === 'divider') {
+      el = document.createElement('div');
+      el.className = 'demo-divider';
+    } else if (item.type === 'explain') {
+      el = document.createElement('div');
+      el.className = 'demo-explain';
+      el.innerHTML = item.text;
+    } else if (item.type === 'code') {
+      el = document.createElement('div');
+      el.className = 'demo-code';
+      el.innerHTML = `<span class="cf">Copy fix</span><pre><span class="rem">&lt;button class="icon-close"&gt;&lt;/button&gt;</span><span class="add">&lt;button class="icon-close" aria-label="Close dialog"&gt;&lt;/button&gt;</span></pre>`;
+    }
+    demoBody.appendChild(el);
+    i++;
+    setTimeout(next, item.type === 'code' ? 500 : 550);
+  }
+  setTimeout(next, 400);
+</script>
+
+</body>
+</html>
