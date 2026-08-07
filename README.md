@@ -265,7 +265,7 @@ Passionate about building AI-powered developer tools, accessibility solutions, a
 ### Connect
 
 - 🌐 GitHub: https://github.com/MarwanMaherH
-- 💼 LinkedIn: https://linkedin.com/in/marwanmaher
+- 💼 LinkedIn: https://linkedin.com/in/MarwanMaherH
 - 🐦 X: https://x.com/MarwanMaherH
 
 ---
