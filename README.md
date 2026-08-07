@@ -1,75 +1,269 @@
-# Axditra — MVP
+<div align="center">
 
-Scan a live page with axe-core, get a transparent score, and turn every
-violation into a plain-language explanation plus a copy-pasteable fix.
+<img src="assets/logo.png" alt="Axditra Logo" width="110"/>
 
-## What's in here
+# AXDITRA
 
-- `server.js` — Express backend. `/api/scan` runs axe-core against a URL in
-  headless Chromium (via Playwright). `/api/explain` sends one violation to
-  Claude and gets back a plain-language explanation + fixed HTML.
-- `public/app.html` — the scanning UI (paste a URL, see results, copy fixes).
-- `public/index.html` *(optional)* — drop your marketing landing page here if
-  you want `/` to serve it instead of the app.
+### AI-Powered Accessibility Auditor
 
-## Setup
+**Scan • Understand • Fix Accessibility Faster**
+
+<p>
+  <img src="https://img.shields.io/badge/Node.js-20+-339933?style=for-the-badge&logo=node.js&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Express-Backend-black?style=for-the-badge&logo=express"/>
+  <img src="https://img.shields.io/badge/Playwright-Chromium-45ba63?style=for-the-badge&logo=playwright&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Claude-AI-orange?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/WCAG-2.1-blue?style=for-the-badge"/>
+</p>
+
+<p>
+
+**AI-powered accessibility scanner that doesn't just detect issues—it explains them and generates production-ready fixes.**
+
+</p>
+
+---
+
+### 🚀 Coming Soon
+
+Website Demo • GitHub Pull Requests • User Dashboard • Cloud Deployment
+
+</div>
+
+---
+
+# 📖 Overview
+
+Modern accessibility tools stop after showing you **what is wrong**.
+
+**AXDITRA** goes much further.
+
+It scans any website using **axe-core**, explains every accessibility issue in plain English using **Claude AI**, then generates code fixes developers can copy directly into their projects.
+
+Instead of spending hours reading WCAG documentation, developers receive an explanation they actually understand.
+
+---
+
+# ✨ Features
+
+✅ Live Accessibility Scanning
+
+✅ WCAG 2.1 A / AA Validation
+
+✅ AI-Powered Explanations
+
+✅ AI Generated HTML Fixes
+
+✅ Accessibility Score (0–100)
+
+✅ Copy Ready Code
+
+✅ Waitlist API
+
+✅ Optional Email Confirmation
+
+---
+
+# ⚡ How It Works
+
+```text
+          Website URL
+               │
+               ▼
+        Playwright Browser
+               │
+               ▼
+          axe-core Scanner
+               │
+               ▼
+      Accessibility Violations
+               │
+               ▼
+          Claude AI Analysis
+               │
+               ▼
+     Human Explanation + HTML Fix
+```
+
+---
+
+# 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Node.js |
+| Framework | Express |
+| Browser | Playwright |
+| Scanner | axe-core |
+| AI | Claude API |
+| Storage | JSON |
+| Email | Resend |
+
+---
+
+# 🚀 Quick Start
+
+### Clone
+
+```bash
+git clone https://github.com/MarwanMaherH/Axditra.git
+
+cd Axditra
+```
+
+### Install
 
 ```bash
 npm install
-npx playwright install chromium   # downloads the headless browser binary
-cp .env.example .env              # then add your ANTHROPIC_API_KEY
+```
+
+### Install Chromium
+
+```bash
+npx playwright install chromium
+```
+
+### Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+Add your Claude API Key
+
+```env
+ANTHROPIC_API_KEY=YOUR_API_KEY
+```
+
+Start the server
+
+```bash
 npm start
 ```
 
-Open **http://localhost:3000/app.html**.
+Open
 
-## Notes on this build
+```
+http://localhost:3000/app.html
+```
 
-- This was built without live network access in the environment that wrote
-  it, so it has **not been run end-to-end yet**. The syntax has been checked
-  (`node --check server.js` passes), but you should smoke-test the two
-  endpoints yourself before treating this as demo-ready:
-  1. `npm start`, then scan a real URL from the UI.
-  2. Click "Explain & generate fix" on one issue and confirm the AI response
-     comes back and parses correctly.
-- If a scan times out on a heavy page, raise the `timeout` value in
-  `page.goto()` inside `server.js`.
-- The score formula in `scoreFromViolations()` is a starting point — a
-  critical issue costs 10 points per node, serious 6, moderate 3, minor 1,
-  floored at 0. Tune the weights once you have real audits to compare against.
-- `/api/explain` calls `claude-sonnet-4-6`. Swap the model string in
-  `server.js` if you want to use a different one.
+---
 
-## Waitlist
+# 📂 Project Structure
 
-`POST /api/waitlist { email }` saves the email to `data/waitlist.json` on
-the server (created automatically on first run) and, if you've set
-`RESEND_API_KEY` in `.env`, sends a confirmation email via
-[Resend](https://resend.com) — free tier covers 100 emails/day, no
-credit card needed to start.
+```
+Axditra
+│
+├── public/
+│   ├── index.html
+│   └── app.html
+│
+├── server.js
+├── package.json
+├── README.md
+└── .env.example
+```
 
-- No `RESEND_API_KEY` set → signups still get saved, no email is sent.
-  Nothing breaks.
-- `GET /api/waitlist` lists everyone who's signed up so far — handy while
-  testing, but **lock this down or remove it before deploying publicly**,
-  since right now anyone who finds the URL can see every email on the list.
-- If you want a real domain in the "from" address instead of
-  `onboarding@resend.dev`, verify a domain in the Resend dashboard first,
-  then update `WAITLIST_FROM_EMAIL` in `.env`.
+---
 
-This is intentionally file-based rather than a full database — fine for the
-first hundred signups. Move to SQLite or Postgres once volume picks up.
+# 🎯 Roadmap
 
-## Next steps toward the full MVP
+- ✅ Accessibility Scanner
 
-1. ~~Wire the landing page's "Join the waitlist" CTA to an actual mailing
-   list~~ — done, see the Waitlist section above.
-2. Add a "Copy PR" flow: instead of just copying the fixed snippet, open a
-   real pull request against a connected GitHub repo (this is the "PR"
-   half of the "detection to Pull Request" promise — not built yet).
-3. Persist scans (even to a simple SQLite file) so you can show "return
-   users" and "time-to-first-fix" — the two brand metrics from the strategy
-   doc that need real data to track.
-4. Rate-limit `/api/scan` and `/api/explain` before this is public — a
-   naive open endpoint that launches headless Chromium on request is easy
-   to abuse.
+- ✅ AI Explanations
+
+- ✅ AI HTML Fixes
+
+- ✅ Waitlist
+
+- 🔄 Authentication
+
+- 🔄 User Dashboard
+
+- 🔄 GitHub Pull Request Generator
+
+- 🔄 Scan History
+
+- 🔄 Team Collaboration
+
+- 🔄 Cloud Deployment
+
+---
+
+# 💡 Why AXDITRA?
+
+Most accessibility reports look like this:
+
+```
+color-contrast
+aria-label
+button-name
+duplicate-id
+```
+
+Developers then spend time searching documentation just to understand the issue.
+
+AXDITRA eliminates that process.
+
+Instead of error codes, developers receive:
+
+- Plain-English explanations
+- Corrected HTML
+- Accessibility best practices
+- Faster development workflow
+
+---
+
+# 👨‍💻 About the Creator
+
+<div align="center">
+
+<img src="assets/marwan.jpg" width="170" style="border-radius:50%;"/>
+
+## Marwan Maher
+
+**Software Engineer**
+
+Building developer tools powered by AI.
+
+Making accessibility easier for every developer.
+
+### Connect
+
+X
+
+https://x.com/MarwanMaherH
+
+LinkedIn
+
+https://linkedin.com/in/marwanmaher
+
+GitHub
+
+https://github.com/MarwanMaherH
+
+</div>
+
+---
+
+# 🤝 Contributing
+
+Contributions, feature requests and ideas are always welcome.
+
+Feel free to fork the project and open a Pull Request.
+
+---
+
+# 📄 License
+
+MIT License
+
+---
+
+<div align="center">
+
+## ⭐ If you like this project, consider giving it a Star.
+
+Made with ❤️ by Marwan Maher
+
+</div>
