@@ -1,38 +1,26 @@
 <p align="center">
-  <img src="assets/logo.png" width="140" alt="Axditra Logo"/>
+  <img src="assets/logo.png" width="120" alt="Axditra Logo"/>
 </p>
 
 <h1 align="center">AXDITRA</h1>
 
 <p align="center">
-AI-Powered Accessibility Auditor
+<b>AI-Powered Accessibility Auditor</b><br/>
+Scan • Understand • Fix Accessibility Faster
 </p>
 
 <p align="center">
-<b>Scan • Understand • Fix Accessibility Faster</b>
+<a href="https://axditra.up.railway.app"><b>🔗 Try it live — axditra.up.railway.app</b></a>
 </p>
 
 <p align="center">
-AI-powered accessibility scanner that doesn't just detect issues — it explains them and generates production-ready fixes.
-</p>
-
-<p align="center">
-
 <img src="https://img.shields.io/badge/Node.js-22.x-339933?style=for-the-badge&logo=node.js&logoColor=white">
-
 <img src="https://img.shields.io/badge/Express-Backend-000000?style=for-the-badge&logo=express">
-
 <img src="https://img.shields.io/badge/Playwright-Chromium-2EAD33?style=for-the-badge&logo=playwright">
-
 <img src="https://img.shields.io/badge/axe--core-WCAG-blue?style=for-the-badge">
-
 <img src="https://img.shields.io/badge/Claude-AI-7C3AED?style=for-the-badge">
-
 <img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge">
-
 </p>
-
----
 
 <p align="center">
 <img src="assets/banner.png" width="100%">
@@ -40,40 +28,37 @@ AI-powered accessibility scanner that doesn't just detect issues — it explains
 
 ---
 
-# 📖 Overview
+## 📖 Overview
 
-Accessibility tools usually stop after telling developers **what is wrong**.
+Most accessibility tools stop after telling developers **what's wrong**.
 
-**AXDITRA** goes several steps further.
-
-It scans any public website using **Playwright** and **axe-core**, explains every accessibility issue using **Claude AI**, and instantly generates production-ready HTML fixes developers can copy directly into their projects.
-
-Instead of reading long WCAG documentation, developers receive simple explanations and actionable fixes within seconds.
+**Axditra** goes further: it scans any public website with **Playwright** and **axe-core**, explains every accessibility issue in plain English using **Claude AI**, and generates a ready-to-use HTML fix — all in one sitting, without digging through WCAG documentation.
 
 ---
 
-# ✨ Features
+## ✨ Features
 
-| Feature | Description |
-|----------|-------------|
-| 🔍 Live Accessibility Scan | Analyze any public website using Playwright + axe-core |
-| 📊 Accessibility Score | Transparent scoring system from 0–100 |
-| 🤖 AI Explanations | Claude explains every issue in plain English |
-| 🛠 AI HTML Fixes | Generates production-ready accessible HTML |
-| 📋 Copy Ready Code | Copy generated fixes instantly |
-| 📧 Waitlist API | Built-in waitlist endpoint |
-| ✉ Optional Emails | Confirmation emails using Resend |
-| ⚡ Fast Reports | Results in seconds |
+| Feature | Description | Status |
+|---|---|---|
+| 🔍 Live Accessibility Scan | Scans any public URL using Playwright + axe-core against WCAG 2.1 A/AA | ✅ Live |
+| 📊 Transparent Score | 0–100 score, weighted by issue severity — no black box | ✅ Live |
+| 🤖 AI Explanations | Claude explains each issue in plain language, not just a rule ID | ✅ Live |
+| 🛠 AI-Generated Fixes | Produces a corrected, copy-ready HTML snippet per issue | ✅ Live |
+| 📧 Waitlist | Captures signups, optional Resend confirmation email | ✅ Live |
+| 🔐 Hardened Backend | Rate limiting, admin-authenticated endpoints, SSRF protection, security headers | ✅ Live |
+| ☁️ Public Deployment | Live on Railway, not just localhost | ✅ Live |
+| 🔁 GitHub PR Generator | Open a real pull request with the fix instead of copy/paste | 🔄 Planned |
+| 📈 Dashboard & Scan History | Save and revisit past scans | 🔄 Planned |
 
 ---
 
-# ⚙️ How It Works
+## ⚙️ How It Works
 
 ```text
            Website URL
                 │
                 ▼
-      Playwright Chromium
+      Playwright (Chromium)
                 │
                 ▼
           axe-core Scanner
@@ -90,119 +75,63 @@ Instead of reading long WCAG documentation, developers receive simple explanatio
 
 ---
 
-# 🖼 Screenshots
+## 🔐 Security
 
-## Landing Page
+Built with the assumption that this is a public-facing service from day one, not an afterthought:
 
-<p align="center">
-<img src="assets/banner.png" width="100%">
-</p>
-
----
-
-## Accessibility Report
-
-<p align="center">
-<img src="assets/scan-result.png" width="100%">
-</p>
+- **Rate limiting** per endpoint (tighter limits on costlier routes — scanning launches a real browser, explanations cost API credits)
+- **SSRF protection** — resolves the actual IP behind any submitted hostname and blocks private/internal ranges, not just a string match against `localhost`
+- **Admin-authenticated waitlist** — signup data isn't publicly readable
+- **Security headers** via Helmet
 
 ---
 
-## AI Explanation
-
-<p align="center">
-<img src="assets/explain.png" width="100%">
-</p>
-
----
-
-## Dashboard
-
-<p align="center">
-<img src="assets/dashboard.png" width="100%">
-</p>
-
----
-
-# 🛠 Tech Stack
+## 🛠 Tech Stack
 
 | Layer | Technology |
-|--------|------------|
+|---|---|
 | Runtime | Node.js |
 | Backend | Express |
 | Browser Automation | Playwright |
 | Accessibility Engine | axe-core |
-| Artificial Intelligence | Anthropic Claude |
-| Storage | JSON |
-| Email | Resend |
+| AI | Anthropic Claude |
+| Hosting | Railway |
+| Storage | JSON (file-based, MVP stage) |
+| Email | Resend (optional) |
 
 ---
 
-# 🚀 Quick Start
+## 🚀 Quick Start
 
-## Clone the Repository
+**Try it without installing anything:** [axditra.up.railway.app](https://axditra.up.railway.app)
+
+**Or run it locally:**
 
 ```bash
 git clone https://github.com/MarwanMaherH/Axditra.git
-
 cd Axditra
-```
-
-## Install Dependencies
-
-```bash
 npm install
-```
-
-## Install Chromium
-
-```bash
 npx playwright install chromium
-```
-
-## Configure Environment
-
-```bash
 cp .env.example .env
-```
-
-Add your API key
-
-```env
-ANTHROPIC_API_KEY=YOUR_API_KEY
-```
-
-Run the application
-
-```bash
+# add your ANTHROPIC_API_KEY and ADMIN_SECRET to .env
 npm start
 ```
 
-Open
-
-```
-http://localhost:3000/app.html
-```
+Open `http://localhost:3000/app.html`
 
 ---
 
-# 📂 Project Structure
+## 📂 Project Structure
 
 ```
 Axditra
-│
 ├── assets/
 │   ├── logo.png
 │   ├── banner.png
-│   ├── dashboard.png
-│   ├── explain.png
-│   ├── scan-result.png
 │   └── marwan.jpg
-│
 ├── public/
 │   ├── index.html
 │   └── app.html
-│
 ├── server.js
 ├── package.json
 ├── README.md
@@ -211,25 +140,23 @@ Axditra
 
 ---
 
-# 🗺 Roadmap
+## 🗺 Roadmap
 
-- ✅ Accessibility Scanner
-- ✅ AI Explanations
-- ✅ AI HTML Fix Generator
+- ✅ Accessibility scanner (Playwright + axe-core)
+- ✅ AI explanations + HTML fix generation
 - ✅ Waitlist API
-- 🔄 Authentication
-- 🔄 User Dashboard
-- 🔄 GitHub Pull Request Generator
-- 🔄 Scan History
-- 🔄 Team Collaboration
-- 🔄 Cloud Deployment
-- 🔄 VS Code Extension
+- ✅ Rate limiting, SSRF protection, admin auth, security headers
+- ✅ Public deployment
+- 🔄 GitHub Pull Request generator
+- 🔄 Scan history & user accounts
+- 🔄 Team collaboration
+- 🔄 VS Code extension
 
 ---
 
-# 💡 Why AXDITRA?
+## 💡 Why Axditra?
 
-Traditional accessibility tools typically generate reports like:
+Traditional accessibility tools generate reports like:
 
 ```text
 color-contrast
@@ -238,56 +165,39 @@ duplicate-id
 aria-label
 ```
 
-Developers are then expected to search documentation and figure out how to solve each issue manually.
-
-AXDITRA removes that friction by providing:
-
-- ✅ Plain-English explanations
-- ✅ AI-generated HTML fixes
-- ✅ Accessibility best practices
-- ✅ Faster development workflow
-- ✅ Better WCAG compliance
+...and leave developers to search documentation and figure out the fix themselves. Axditra removes that step: plain-English explanations, AI-generated fixes, and a faster path to actually shipping accessible code.
 
 ---
 
-# 👨‍💻 About the Creator
+## 👨‍💻 About the Creator
 
 <p align="center">
-<img src="assets/marwan.jpg" width="170" style="border-radius:50%;">
+<img src="assets/marwan.jpg" width="150" style="border-radius:50%;">
 </p>
 
-## Marwan Maher
+<p align="center">
+<b>Marwan Maher</b><br/>
+Founder of Axditra — Full-Stack & AI Developer, building in public from Egypt 🇪🇬
+</p>
 
-**Software Engineer**
-
-Passionate about building AI-powered developer tools, accessibility solutions, automation systems, and modern web applications.
-
-### Connect
-
-- 🌐 GitHub: https://github.com/MarwanMaherH
-- 💼 LinkedIn: https://linkedin.com/in/MarwanMaherH
-- 🐦 X: https://x.com/MarwanMaherH
-
----
-
-# 🤝 Contributing
-
-Contributions, feature requests, bug reports, and pull requests are always welcome.
-
-If you'd like to improve AXDITRA, feel free to fork the repository and submit a Pull Request.
+<p align="center">
+<a href="https://github.com/MarwanMaherH">GitHub</a> ·
+<a href="https://linkedin.com/in/MarwanMaherH">LinkedIn</a> ·
+<a href="https://x.com/MarwanMaherH">X</a>
+</p>
 
 ---
 
-# 📄 License
+## 🤝 Contributing
 
-This project is licensed under the MIT License.
+Issues, feature requests, and pull requests are welcome — fork the repo and submit a PR.
 
----
+## 📄 License
+
+MIT License.
 
 <p align="center">
 
-## ⭐ If you like this project, consider giving it a Star!
-
-Made with ❤️ by **Marwan Maher**
+⭐ **If this project is useful to you, consider giving it a star.**
 
 </p>
