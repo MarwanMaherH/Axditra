@@ -1,8 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import { chromium } from 'playwright';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -10,8 +14,60 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+// ---------- Security: Headers ----------
+// Helmet sets a batch of well-known HTTP security headers (X-Content-Type-Options,
+// X-Frame-Options, etc.) with sane defaults. One line, meaningful protection.
+app.use(helmet({
+  contentSecurityPolicy: false, // left off for now since the frontend uses inline scripts/styles
+}));
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ---------- Security: Admin authentication ----------
+function requireAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+
+  const token = authHeader.slice(7);
+  if (token !== ADMIN_SECRET) {
+    return res.status(401).json({ error: 'Invalid authentication credentials.' });
+  }
+
+  next();
+}
+
+// ---------- Security: Rate limiting ----------
+// Each limiter tracks requests per IP over a time window. Costlier or
+// more sensitive endpoints get tighter limits.
+const scanLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many scan requests. Please try again later.' },
+});
+
+const explainLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many AI explanation requests. Please try again later.' },
+});
+
+const waitlistLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many waitlist requests. Please try again later.' },
+});
 
 // axe-core's built browser bundle — we inject this into the scanned page.
 const AXE_SCRIPT = fs.readFileSync(
@@ -94,17 +150,60 @@ function scoreFromViolations(violations) {
     const w = weight[v.impact] || 2;
     penalty += w * v.nodes.length;
   }
-  const score = Math.max(0, Math.round(100 - penalty));
-  return score;
+  return Math.max(0, Math.round(100 - penalty));
 }
 
-function isValidUrl(input) {
-  try {
-    const u = new URL(input);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch {
-    return false;
+// ---------- Security: SSRF protection ----------
+// A hostname string check alone isn't enough — an attacker could use a
+// normal-looking domain that *resolves* to an internal address (DNS
+// rebinding). So we resolve the hostname first and check the real IP.
+function isPrivateOrReservedIp(ip) {
+  if (ip === '::1') return true;
+  if (ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd')) return true;
+
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split('.').map(Number);
+    if (a === 127) return true;                       // loopback
+    if (a === 10) return true;                          // private
+    if (a === 172 && b >= 16 && b <= 31) return true;    // private
+    if (a === 192 && b === 168) return true;             // private
+    if (a === 169 && b === 254) return true;             // link-local / cloud metadata
+    if (a === 0) return true;                            // "this network"
   }
+  return false;
+}
+
+async function isSafeScanUrl(input) {
+  let parsed;
+  try {
+    parsed = new URL(input);
+  } catch {
+    return { safe: false, reason: 'Please provide a valid http(s) URL.' };
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { safe: false, reason: 'Only http:// and https:// URLs are allowed.' };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname.endsWith('.local')) {
+    return { safe: false, reason: 'Local hostnames are not allowed.' };
+  }
+
+  let addresses;
+  try {
+    addresses = await dns.lookup(hostname, { all: true });
+  } catch {
+    return { safe: false, reason: 'Could not resolve this hostname.' };
+  }
+
+  for (const { address } of addresses) {
+    if (isPrivateOrReservedIp(address)) {
+      return { safe: false, reason: 'This URL resolves to a private or internal address.' };
+    }
+  }
+
+  return { safe: true };
 }
 
 // ---------- Routes ----------
@@ -114,11 +213,16 @@ function isValidUrl(input) {
  * Loads the page in headless Chromium, runs axe-core against it,
  * and returns a transparent score + the list of violations.
  */
-app.post('/api/scan', async (req, res) => {
+app.post('/api/scan', scanLimiter, async (req, res) => {
   const { url } = req.body || {};
 
-  if (!url || !isValidUrl(url)) {
+  if (!url) {
     return res.status(400).json({ error: 'Please provide a valid http(s) URL.' });
+  }
+
+  const safety = await isSafeScanUrl(url);
+  if (!safety.safe) {
+    return res.status(400).json({ error: safety.reason });
   }
 
   let browser;
@@ -127,7 +231,6 @@ app.post('/api/scan', async (req, res) => {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
-    // Inject axe-core into the page, then run it in-page.
     await page.addScriptTag({ content: AXE_SCRIPT });
     const results = await page.evaluate(async () => {
       // eslint-disable-next-line no-undef
@@ -171,7 +274,7 @@ app.post('/api/scan', async (req, res) => {
  *  - a corrected version of the exact HTML snippet
  * Returns strict JSON so the frontend can render it without guesswork.
  */
-app.post('/api/explain', async (req, res) => {
+app.post('/api/explain', explainLimiter, async (req, res) => {
   if (!anthropic) {
     return res.status(501).json({
       error: 'AI explanations are not configured. Set ANTHROPIC_API_KEY in your .env file.',
@@ -227,7 +330,7 @@ Respond with ONLY a JSON object, no markdown fences, no preamble, in this exact 
  * is configured, sends a confirmation email. Works fine with no Resend
  * key set — it just captures the signup silently in that case.
  */
-app.post('/api/waitlist', async (req, res) => {
+app.post('/api/waitlist', waitlistLimiter, async (req, res) => {
   const { email } = req.body || {};
 
   if (!isValidEmail(email)) {
@@ -247,8 +350,6 @@ app.post('/api/waitlist', async (req, res) => {
   try {
     emailStatus = await sendConfirmationEmail(normalized);
   } catch (err) {
-    // Don't fail the signup just because the confirmation email failed —
-    // the email is already saved to the waitlist either way.
     console.error('Confirmation email failed:', err.message);
   }
 
@@ -257,10 +358,9 @@ app.post('/api/waitlist', async (req, res) => {
 
 /**
  * GET /api/waitlist
- * Quick way to check who's signed up during development.
- * Lock this down (or remove it) before this goes anywhere public.
+ * Requires: Authorization: Bearer YOUR_ADMIN_SECRET
  */
-app.get('/api/waitlist', (_req, res) => {
+app.get('/api/waitlist', requireAdmin, (_req, res) => {
   const list = readWaitlist();
   res.json({ count: list.length, entries: list });
 });

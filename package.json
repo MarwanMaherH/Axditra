@@ -13,6 +13,8 @@
     "axe-core": "^4.10.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
     "playwright": "^1.48.0"
   }
 }
