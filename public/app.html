@@ -102,6 +102,58 @@
   }
   .status.error { color: var(--critical); }
 
+  /* ---------- Live scan progress ---------- */
+  .scan-progress {
+    display: none;
+    max-width: 360px;
+    margin: 24px auto 0;
+    text-align: left;
+  }
+  .scan-progress.show { display: block; }
+  .scan-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--steel);
+    opacity: 0.4;
+    transition: opacity 0.3s ease, color 0.3s ease;
+  }
+  .scan-step.active { opacity: 1; color: var(--bone); }
+  .scan-step.done { opacity: 0.75; color: var(--steel); }
+  .scan-step .mark {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--steel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .scan-step.active .mark {
+    border-color: var(--gold);
+    animation: pulseRing 1s ease-in-out infinite;
+  }
+  .scan-step.done .mark {
+    border-color: var(--gold);
+    background: var(--gold);
+  }
+  .scan-step.done .mark::after {
+    content: '';
+    width: 4px;
+    height: 7px;
+    border-right: 1.5px solid var(--ink);
+    border-bottom: 1.5px solid var(--ink);
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+  @keyframes pulseRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217,162,92,0.35); }
+    50% { box-shadow: 0 0 0 4px rgba(217,162,92,0); }
+  }
+
   main { padding: 40px 0 100px; }
 
   .score-panel {
@@ -131,6 +183,12 @@
     border-radius: 6px;
     padding: 24px;
     margin-bottom: 14px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: cardIn 0.45s ease forwards;
+  }
+  @keyframes cardIn {
+    to { opacity: 1; transform: translateY(0); }
   }
   .issue-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
   .issue-title { font-family: var(--font-body); font-weight: 600; font-size: 15.5px; }
@@ -249,6 +307,12 @@
     <button type="submit" class="scan-btn" id="scanBtn">Scan</button>
   </form>
   <div class="status" id="status"></div>
+  <div class="scan-progress" id="scanProgress">
+    <div class="scan-step" data-step="0"><span class="mark"></span>Connecting to the page</div>
+    <div class="scan-step" data-step="1"><span class="mark"></span>Loading rendered content</div>
+    <div class="scan-step" data-step="2"><span class="mark"></span>Running WCAG accessibility checks</div>
+    <div class="scan-step" data-step="3"><span class="mark"></span>Calculating score</div>
+  </div>
 </div>
 
 <main class="wrap">
@@ -272,6 +336,8 @@
   const urlInput = document.getElementById('urlInput');
   const scanBtn = document.getElementById('scanBtn');
   const status = document.getElementById('status');
+  const scanProgress = document.getElementById('scanProgress');
+  const scanSteps = scanProgress.querySelectorAll('.scan-step');
   const scorePanel = document.getElementById('scorePanel');
   const scoreNum = document.getElementById('scoreNum');
   const issueCount = document.getElementById('issueCount');
@@ -281,12 +347,49 @@
 
   const impactLabel = { critical: 'Critical', serious: 'Serious', moderate: 'Moderate', minor: 'Minor' };
 
+  let progressTimer = null;
+
+  function runScanProgress() {
+    let step = 0;
+    scanSteps.forEach((s) => s.classList.remove('active', 'done'));
+    scanSteps[0].classList.add('active');
+    progressTimer = setInterval(() => {
+      scanSteps[step].classList.remove('active');
+      scanSteps[step].classList.add('done');
+      step++;
+      if (step < scanSteps.length) {
+        scanSteps[step].classList.add('active');
+      } else {
+        step = scanSteps.length - 1; // hold on last step until the real response arrives
+      }
+    }, 900);
+  }
+
+  function finishScanProgress() {
+    clearInterval(progressTimer);
+    scanSteps.forEach((s) => { s.classList.remove('active'); s.classList.add('done'); });
+  }
+
+  function animateScore(target) {
+    const duration = 700;
+    const start = performance.now();
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      const current = Math.round(eased * target);
+      scoreNum.innerHTML = `${current}<span>/100</span>`;
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const url = urlInput.value.trim();
     scanBtn.disabled = true;
-    status.textContent = 'Scanning… this can take up to 30 seconds.';
-    status.className = 'status';
+    status.textContent = '';
+    scanProgress.classList.add('show');
+    runScanProgress();
     scorePanel.classList.remove('show');
     issuesList.innerHTML = '';
     issuesList.classList.remove('show');
@@ -300,11 +403,16 @@
       });
       const data = await res.json();
 
+      finishScanProgress();
       if (!res.ok) throw new Error(data.error || 'Scan failed.');
 
-      status.textContent = '';
-      renderResults(data);
+      setTimeout(() => {
+        scanProgress.classList.remove('show');
+        renderResults(data);
+      }, 350); // let the last checkmark register before switching views
     } catch (err) {
+      clearInterval(progressTimer);
+      scanProgress.classList.remove('show');
       status.textContent = err.message;
       status.className = 'status error';
     } finally {
@@ -313,10 +421,11 @@
   });
 
   function renderResults(data) {
-    scoreNum.innerHTML = `${data.score}<span>/100</span>`;
+    scoreNum.innerHTML = `0<span>/100</span>`;
     issueCount.textContent = data.totalIssues;
     scannedUrl.textContent = data.url;
     scorePanel.classList.add('show');
+    animateScore(data.score);
 
     if (data.violations.length === 0) {
       emptyState.textContent = 'No violations found. This page passes the checks we ran.';
@@ -324,10 +433,13 @@
       return;
     }
 
+    let cardIndex = 0;
     data.violations.forEach((violation, vi) => {
       violation.nodes.forEach((node, ni) => {
         const card = document.createElement('div');
         card.className = 'issue-card';
+        card.style.animationDelay = `${Math.min(cardIndex * 60, 480)}ms`;
+        cardIndex++;
         const impact = violation.impact || 'moderate';
         card.innerHTML = `
           <div class="issue-head">
