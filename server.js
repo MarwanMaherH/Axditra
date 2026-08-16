@@ -264,8 +264,25 @@ app.post('/api/scan', scanLimiter, async (req, res) => {
   const { url } = req.body || {};
 
   const supa = supabaseForRequest(req);
-  const user = await getAuthedUser(supa);
+// ============================================================
+// FIX: replace your existing getAuthedUser function in server.js
+// with this version. The only change: everything is now wrapped
+// in try/catch, so a Supabase network hiccup can never crash or
+// hang a request — it just falls back to "not logged in" and the
+// scan still works normally.
+// ============================================================
 
+async function getAuthedUser(supabaseClient) {
+  if (!supabaseClient) return null;
+  try {
+    const { data, error } = await supabaseClient.auth.getUser();
+    if (error || !data?.user) return null;
+    return data.user;
+  } catch (err) {
+    console.error('Auth check failed (continuing as anonymous):', err.message);
+    return null;
+  }
+}
   if (!url) {
 
     return res.status(400).json({ error: 'Please provide a valid http(s) URL.' });
