@@ -9,6 +9,7 @@ import dns from 'node:dns/promises';
 import net from 'node:net';
 import { chromium } from 'playwright';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -16,6 +17,45 @@ const PORT = process.env.PORT || 3000;
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
+const SUPABASE_URL = process.env.SUPABASE_URL || null;
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || null;
+
+
+function supabaseForRequest(req) {
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return null;
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.slice(7);
+
+  const client = createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    }
+  );
+
+  return client;
+}
+
+async function getAuthedUser(supabaseClient) {
+  if (!supabaseClient) return null;
+
+  const { data, error } = await supabaseClient.auth.getUser();
+
+  if (error || !data?.user) return null;
+
+  return data.user;
+}
 // ---------- Security: Headers ----------
 // Helmet sets a batch of well-known HTTP security headers (X-Content-Type-Options,
 // X-Frame-Options, etc.) with sane defaults. One line, meaningful protection.
@@ -208,6 +248,13 @@ async function isSafeScanUrl(input) {
 
 // ---------- Routes ----------
 
+app.get('/api/config', (_req, res) => {
+  res.json({
+    supabaseUrl: SUPABASE_URL,
+    supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
+  });
+});
+
 /**
  * POST /api/scan { url }
  * Loads the page in headless Chromium, runs axe-core against it,
@@ -216,7 +263,11 @@ async function isSafeScanUrl(input) {
 app.post('/api/scan', scanLimiter, async (req, res) => {
   const { url } = req.body || {};
 
+  const supa = supabaseForRequest(req);
+  const user = await getAuthedUser(supa);
+
   if (!url) {
+
     return res.status(400).json({ error: 'Please provide a valid http(s) URL.' });
   }
 
@@ -252,13 +303,40 @@ app.post('/api/scan', scanLimiter, async (req, res) => {
       })),
     }));
 
-    res.json({
+let saved = false;
+
+if (user) {
+  const { error: insertError } = await supa
+    .from('scans')
+    .insert({
+      user_id: user.id,
       url,
-      scannedAt: new Date().toISOString(),
       score: scoreFromViolations(violations),
-      totalIssues: violations.reduce((sum, v) => sum + v.nodes.length, 0),
-      violations,
+      violations_count: violations.reduce(
+        (sum, v) => sum + v.nodes.length,
+        0
+      ),
+      results: { violations },
     });
+
+  if (insertError) {
+    console.error('Could not save scan:', insertError.message);
+  } else {
+    saved = true;
+  }
+}
+
+res.json({
+  url,
+  scannedAt: new Date().toISOString(),
+  score: scoreFromViolations(violations),
+  totalIssues: violations.reduce(
+    (sum, v) => sum + v.nodes.length,
+    0
+  ),
+  violations,
+  saved,
+});
   } catch (err) {
     console.error('Scan failed:', err.message);
     res.status(500).json({ error: 'Scan failed. The page may be unreachable, or took too long to load.', detail: err.message });
@@ -363,6 +441,57 @@ app.post('/api/waitlist', waitlistLimiter, async (req, res) => {
 app.get('/api/waitlist', requireAdmin, (_req, res) => {
   const list = readWaitlist();
   res.json({ count: list.length, entries: list });
+});
+
+app.get('/api/scans', async (req, res) => {
+  const supa = supabaseForRequest(req);
+  const user = await getAuthedUser(supa);
+
+  if (!user) {
+    return res.status(401).json({
+      error: 'Please sign in to view your scan history.',
+    });
+  }
+
+  const { data, error } = await supa
+    .from('scans')
+    .select('id, url, score, violations_count, created_at')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('Could not load scans:', error.message);
+
+    return res.status(500).json({
+      error: 'Could not load your scan history right now.',
+    });
+  }
+
+  res.json({ scans: data });
+});
+app.get('/api/scans/:id', async (req, res) => {
+  const supa = supabaseForRequest(req);
+  const user = await getAuthedUser(supa);
+
+  if (!user) {
+    return res.status(401).json({
+      error: 'Please sign in to view this report.',
+    });
+  }
+
+  const { data, error } = await supa
+    .from('scans')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
+
+  if (error || !data) {
+    return res.status(404).json({
+      error: 'Scan not found.',
+    });
+  }
+
+  res.json(data);
 });
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
