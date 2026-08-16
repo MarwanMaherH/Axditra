@@ -4,321 +4,214 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — Axditra</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230B0C0E'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23F3F4F1' stroke-width='2.2'/%3E%3Cpath d='M11.3 16.5 L14.5 19.7 L20.7 11.3' fill='none' stroke='%23D9A25C' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='25.5' cy='9.8' r='2' fill='%23D9A25C'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="/js/supabase-client.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --ink: #0B0C0E;
+      --charcoal: #17191D;
+      --charcoal-2: #1E2126;
+      --steel: #7D8890;
+      --bone: #F3F4F1;
+      --gold: #D9A25C;
+      --gold-dim: rgba(217, 162, 92, 0.14);
+      --line: rgba(125, 136, 144, 0.18);
+      --font-display: 'Fraunces', serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --critical: #E28C8C;
     }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      margin: 0;
-      background: #0b0c0e;
-      color: #f5f5f5;
-      font-family: Arial, Helvetica, sans-serif;
+      background: var(--ink);
+      color: var(--bone);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
 
-    .container {
-      width: min(1100px, calc(100% - 40px));
-      margin: 0 auto;
-    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
 
+    .container { width: min(1100px, calc(100% - 48px)); margin: 0 auto; }
+
+    /* ---------- NAV ---------- */
     nav {
-      height: 76px;
-      border-bottom: 1px solid #202328;
+      height: 72px;
+      border-bottom: 1px solid var(--line);
       display: flex;
       align-items: center;
-      justify-content: space-between;
     }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+    .logo svg { width: 20px; height: 20px; flex-shrink: 0; }
 
-    .logo {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
-    .logo span {
-      color: #d7fe03;
-    }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-    }
-
+    .nav-right { display: flex; align-items: center; gap: 16px; }
     #userEmail {
-      color: #8f969f;
-      font-size: 14px;
-    }
-
-    button {
-      border: 0;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .logout {
-      padding: 9px 15px;
-      border: 1px solid #30343a;
-      border-radius: 8px;
-      background: transparent;
-      color: #fff;
-    }
-
-    .logout:hover {
-      background: #17191d;
-    }
-
-    main {
-      padding: 55px 0 80px;
-    }
-
-    .header {
-      margin-bottom: 35px;
-    }
-
-    .eyebrow {
-      color: #d7fe03;
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 10px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(34px, 5vw, 54px);
-      letter-spacing: -2px;
-    }
-
-    .subtitle {
-      margin-top: 12px;
-      color: #8f969f;
-      font-size: 16px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 45px;
-    }
-
-    .stat {
-      padding: 24px;
-      background: #111316;
-      border: 1px solid #22262b;
-      border-radius: 14px;
-    }
-
-    .stat-label {
-      color: #858c94;
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
-
-    .stat-value {
-      font-size: 32px;
-      font-weight: 700;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 15px;
-    }
-
-    h2 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .refresh {
-      padding: 8px 13px;
-      border-radius: 7px;
-      background: #17191d;
-      color: #fff;
-      border: 1px solid #30343a;
-    }
-
-    .refresh:hover {
-      border-color: #d7fe03;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      background: #111316;
-      border: 1px solid #22262b;
-      border-radius: 14px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th,
-    td {
-      padding: 17px 18px;
-      text-align: left;
-      border-bottom: 1px solid #202328;
-    }
-
-    th {
-      color: #777f88;
+      color: var(--steel);
+      font-family: var(--font-mono);
       font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    td {
-      font-size: 14px;
-    }
-
-    tr:last-child td {
-      border-bottom: 0;
-    }
-
-    .url {
-      max-width: 380px;
+      max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    .score {
-      font-weight: 700;
-    }
-
-    .view-btn {
+    .logout {
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
       background: transparent;
-      color: #d7fe03;
-      font-weight: 600;
+      color: var(--bone);
+      cursor: pointer;
+      font-size: 13px;
+      transition: border-color 0.15s ease, color 0.15s ease;
     }
+    .logout:hover { border-color: var(--gold); color: var(--gold); }
 
-    .view-btn:hover {
-      text-decoration: underline;
-    }
+    /* ---------- MAIN ---------- */
+    main { padding: 56px 0 80px; }
 
-    .empty {
-      padding: 55px 20px;
-      text-align: center;
-      color: #777f88;
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
     }
-
-    .loading {
-      padding: 45px;
-      text-align: center;
-      color: #777f88;
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(32px, 4.5vw, 46px);
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
     }
+    .subtitle { color: var(--steel); font-size: 15px; margin-bottom: 40px; }
 
     .error {
-      margin-bottom: 20px;
-      padding: 14px 16px;
-      background: #291b1b;
-      border: 1px solid #593030;
-      border-radius: 9px;
-      color: #ffb3b3;
       display: none;
+      margin-bottom: 24px;
+      padding: 13px 16px;
+      background: rgba(226,140,140,0.1);
+      border: 1px solid rgba(226,140,140,0.3);
+      border-radius: 4px;
+      color: var(--critical);
+      font-size: 13.5px;
     }
+    .error.show { display: block; }
 
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.78);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 100;
+    /* ---------- STATS ---------- */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 48px; }
+    .stat {
+      padding: 24px;
+      background: var(--charcoal);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fadeUp 0.5s ease forwards;
     }
+    .stat:nth-child(1) { animation-delay: 0ms; }
+    .stat:nth-child(2) { animation-delay: 80ms; }
+    .stat:nth-child(3) { animation-delay: 160ms; }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
-    .modal.active {
-      display: flex;
-    }
+    .stat-label { font-family: var(--font-mono); font-size: 12px; color: var(--steel); margin-bottom: 10px; }
+    .stat-value { font-family: var(--font-display); font-size: 34px; font-weight: 500; color: var(--gold); }
 
-    .modal-box {
-      width: min(800px, 100%);
-      max-height: 85vh;
-      overflow-y: auto;
-      background: #111316;
-      border: 1px solid #30343a;
-      border-radius: 16px;
-      padding: 28px;
-    }
-
-    .modal-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      margin-bottom: 25px;
-    }
-
-    .close {
+    /* ---------- TABLE SECTION ---------- */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    h2 { font-family: var(--font-display); font-weight: 500; font-size: 22px; }
+    .refresh {
+      padding: 8px 14px;
+      border-radius: 4px;
       background: transparent;
-      color: #888;
-      font-size: 24px;
-    }
-
-    .close:hover {
-      color: #fff;
-    }
-
-    .report-url {
-      color: #8f969f;
-      word-break: break-all;
-      margin-top: 8px;
-    }
-
-    .report-score {
-      font-size: 42px;
-      font-weight: 700;
-      color: #d7fe03;
-    }
-
-    .issue {
-      margin-top: 15px;
-      padding: 17px;
-      border: 1px solid #25292e;
-      border-radius: 10px;
-      background: #0c0e10;
-    }
-
-    .issue-title {
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .issue-impact {
-      color: #aeb4bb;
+      color: var(--steel);
+      border: 1px solid var(--line);
+      cursor: pointer;
       font-size: 13px;
-      margin-bottom: 8px;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .refresh:hover { border-color: var(--gold); color: var(--bone); }
+
+    .table-wrap { background: var(--charcoal); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 16px 18px; text-align: left; border-bottom: 1px solid var(--line); }
+    th {
+      font-family: var(--font-mono);
+      color: var(--steel);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+    td { font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    tr.scan-row { opacity: 0; transform: translateY(6px); animation: fadeUp 0.4s ease forwards; }
+
+    .url { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .score { font-family: var(--font-mono); font-weight: 600; color: var(--gold); }
+    .view-btn {
+      background: transparent;
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+    }
+    .view-btn:hover { text-decoration: underline; }
+
+    .empty, .loading {
+      padding: 56px 20px;
+      text-align: center;
+      color: var(--steel);
+      font-family: var(--font-mono);
+      font-size: 13.5px;
     }
 
-    .issue-description {
-      color: #8f969f;
-      font-size: 14px;
-      line-height: 1.6;
+    /* ---------- MODAL ---------- */
+    .modal {
+      position: fixed; inset: 0; background: rgba(11,12,14,0.85);
+      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+    }
+    .modal.active { display: flex; }
+    .modal-box {
+      width: min(760px, 100%); max-height: 85vh; overflow-y: auto;
+      background: var(--charcoal); border: 1px solid var(--line); border-radius: 8px; padding: 30px;
+      animation: fadeUp 0.25s ease forwards;
+    }
+    .modal-top { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+    .close { background: transparent; color: var(--steel); font-size: 22px; border: none; cursor: pointer; }
+    .close:hover { color: var(--bone); }
+    .report-url { color: var(--steel); font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; margin-top: 8px; }
+    .report-score { font-family: var(--font-display); font-size: 38px; font-weight: 500; color: var(--gold); margin-bottom: 20px; }
+
+    .issue { margin-top: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--ink); }
+    .issue-title { font-weight: 600; font-size: 14.5px; margin-bottom: 6px; }
+    .issue-impact { color: var(--steel); font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px; }
+    .issue-description { color: var(--steel); font-size: 13.5px; line-height: 1.6; }
+
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
     }
 
     @media (max-width: 700px) {
-      .stats {
-        grid-template-columns: 1fr;
-      }
+      .stats { grid-template-columns: 1fr; }
+      #userEmail { display: none; }
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
 
-      #userEmail {
-        display: none;
-      }
-
-      th:nth-child(3),
-      td:nth-child(3) {
-        display: none;
-      }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.01ms !important; }
     }
   </style>
 </head>
@@ -326,9 +219,11 @@
 <body>
 
   <nav>
-    <div class="container" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-      <div class="logo">Axditra<span>.</span></div>
-
+    <div class="container nav-inner">
+      <a href="/index.html" class="logo">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="#F3F4F1" stroke-width="2.2"/><path d="M11 16.5 L14.5 20 L21 11" fill="none" stroke="#D9A25C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26.4" cy="10" r="2" fill="#D9A25C"/></svg>
+        Axditra
+      </a>
       <div class="nav-right">
         <span id="userEmail"></span>
         <button class="logout" id="logoutBtn">Log out</button>
@@ -339,13 +234,9 @@
   <main>
     <div class="container">
 
-      <div class="header">
-        <div class="eyebrow">Dashboard</div>
-        <h1>Your accessibility history.</h1>
-        <div class="subtitle">
-          Every scan you run is saved here.
-        </div>
-      </div>
+      <div class="eyebrow">Dashboard</div>
+      <h1>Your accessibility history.</h1>
+      <div class="subtitle">Every scan you run is saved here.</div>
 
       <div id="errorBox" class="error"></div>
 
@@ -354,12 +245,10 @@
           <div class="stat-label">Total scans</div>
           <div class="stat-value" id="totalScans">—</div>
         </div>
-
         <div class="stat">
           <div class="stat-label">Average score</div>
           <div class="stat-value" id="averageScore">—</div>
         </div>
-
         <div class="stat">
           <div class="stat-label">Issues found</div>
           <div class="stat-value" id="totalIssues">—</div>
@@ -373,25 +262,16 @@
         </div>
 
         <div class="table-wrap">
-          <div id="loading" class="loading">Loading your scans...</div>
+          <div id="loading" class="loading">Loading your scans…</div>
 
           <table id="scanTable" style="display:none;">
             <thead>
-              <tr>
-                <th>Website</th>
-                <th>Score</th>
-                <th>Issues</th>
-                <th>Date</th>
-                <th></th>
-              </tr>
+              <tr><th>Website</th><th>Score</th><th>Issues</th><th>Date</th><th></th></tr>
             </thead>
-
             <tbody id="scanBody"></tbody>
           </table>
 
-          <div id="empty" class="empty" style="display:none;">
-            No scans yet. Run your first accessibility audit.
-          </div>
+          <div id="empty" class="empty" style="display:none;">No scans yet. Run your first accessibility audit.</div>
         </div>
       </section>
 
@@ -400,20 +280,15 @@
 
   <div class="modal" id="modal">
     <div class="modal-box">
-
       <div class="modal-top">
         <div>
           <h2>Scan report</h2>
           <div class="report-url" id="reportUrl"></div>
         </div>
-
-        <button class="close" id="closeModal">×</button>
+        <button class="close" id="closeModal" aria-label="Close report">×</button>
       </div>
-
       <div class="report-score" id="reportScore"></div>
-
       <div id="reportIssues"></div>
-
     </div>
   </div>
 
@@ -422,40 +297,29 @@
 
   async function apiRequest(url, options = {}) {
     const { session } = authData;
-
     const headers = {
       ...(options.headers || {}),
       Authorization: `Bearer ${session.access_token}`,
       'Content-Type': 'application/json'
     };
-
-    return fetch(url, {
-      ...options,
-      headers
-    });
+    return fetch(url, { ...options, headers });
   }
 
   function showError(message) {
     const box = document.getElementById('errorBox');
     box.textContent = message;
-    box.style.display = 'block';
+    box.classList.add('show');
   }
-
   function clearError() {
-    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('errorBox').classList.remove('show');
   }
 
   function formatDate(date) {
-    return new Date(date).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   async function loadScans() {
     clearError();
-
     const loading = document.getElementById('loading');
     const table = document.getElementById('scanTable');
     const empty = document.getElementById('empty');
@@ -467,32 +331,17 @@
     try {
       const response = await apiRequest('/api/scans');
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Could not load scans.');
-      }
+      if (!response.ok) throw new Error(data.error || 'Could not load scans.');
 
       const scans = data.scans || [];
-
       document.getElementById('totalScans').textContent = scans.length;
 
-      const average =
-        scans.length
-          ? Math.round(
-              scans.reduce((sum, scan) => sum + (scan.score || 0), 0) /
-              scans.length
-            )
-          : 0;
+      const average = scans.length
+        ? Math.round(scans.reduce((sum, scan) => sum + (scan.score || 0), 0) / scans.length)
+        : 0;
+      const issues = scans.reduce((sum, scan) => sum + (scan.violations_count || 0), 0);
 
-      const issues =
-        scans.reduce(
-          (sum, scan) => sum + (scan.violations_count || 0),
-          0
-        );
-
-      document.getElementById('averageScore').textContent =
-        scans.length ? average : '—';
-
+      document.getElementById('averageScore').textContent = scans.length ? average : '—';
       document.getElementById('totalIssues').textContent = issues;
 
       const body = document.getElementById('scanBody');
@@ -504,39 +353,22 @@
         return;
       }
 
-      scans.forEach(scan => {
+      scans.forEach((scan, i) => {
         const row = document.createElement('tr');
-
+        row.className = 'scan-row';
+        row.style.animationDelay = `${Math.min(i * 50, 400)}ms`;
         row.innerHTML = `
-          <td>
-            <div class="url" title="${escapeHtml(scan.url)}">
-              ${escapeHtml(scan.url)}
-            </div>
-          </td>
-
-          <td>
-            <span class="score">${scan.score}/100</span>
-          </td>
-
+          <td><div class="url" title="${escapeHtml(scan.url)}">${escapeHtml(scan.url)}</div></td>
+          <td><span class="score">${scan.score}/100</span></td>
           <td>${scan.violations_count}</td>
-
           <td>${formatDate(scan.created_at)}</td>
-
-          <td>
-            <button
-              class="view-btn"
-              onclick="openReport('${scan.id}')">
-              View
-            </button>
-          </td>
+          <td><button class="view-btn" onclick="openReport('${scan.id}')">View</button></td>
         `;
-
         body.appendChild(row);
       });
 
       loading.style.display = 'none';
       table.style.display = 'table';
-
     } catch (error) {
       loading.style.display = 'none';
       showError(error.message);
@@ -545,52 +377,33 @@
 
   async function openReport(id) {
     clearError();
-
     try {
       const response = await apiRequest(`/api/scans/${id}`);
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Could not load report.');
-      }
+      if (!response.ok) throw new Error(data.error || 'Could not load report.');
 
       document.getElementById('reportUrl').textContent = data.url;
-      document.getElementById('reportScore').textContent =
-        `${data.score}/100`;
+      document.getElementById('reportScore').textContent = `${data.score}/100`;
 
       const container = document.getElementById('reportIssues');
       container.innerHTML = '';
-
       const violations = data.results?.violations || [];
 
       if (!violations.length) {
-        container.innerHTML = `
-          <div class="empty">
-            No accessibility violations found.
-          </div>
-        `;
+        container.innerHTML = `<div class="empty">No accessibility violations found.</div>`;
       } else {
-        violations.forEach(v => {
+        violations.forEach((v) => {
           const issue = document.createElement('div');
           issue.className = 'issue';
-
           issue.innerHTML = `
             <div class="issue-title">${escapeHtml(v.help)}</div>
-            <div class="issue-impact">
-              Impact: ${escapeHtml(v.impact || 'unknown')}
-              · ${v.nodes?.length || 0} element(s)
-            </div>
-            <div class="issue-description">
-              ${escapeHtml(v.description || '')}
-            </div>
+            <div class="issue-impact">Impact: ${escapeHtml(v.impact || 'unknown')} · ${v.nodes?.length || 0} element(s)</div>
+            <div class="issue-description">${escapeHtml(v.description || '')}</div>
           `;
-
           container.appendChild(issue);
         });
       }
-
       document.getElementById('modal').classList.add('active');
-
     } catch (error) {
       showError(error.message);
     }
@@ -598,46 +411,31 @@
 
   function escapeHtml(value) {
     return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
   document.getElementById('closeModal').addEventListener('click', () => {
     document.getElementById('modal').classList.remove('active');
   });
-
   document.getElementById('modal').addEventListener('click', (event) => {
-    if (event.target.id === 'modal') {
-      document.getElementById('modal').classList.remove('active');
-    }
+    if (event.target.id === 'modal') document.getElementById('modal').classList.remove('active');
   });
-
   document.getElementById('refreshBtn').addEventListener('click', loadScans);
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     const client = authData.client;
-
     await client.auth.signOut();
-
     window.location.href = '/login.html';
   });
 
   async function init() {
     try {
       authData = await requireAuthOrRedirect();
-
       if (!authData) return;
-
       const { session } = authData;
-
-      document.getElementById('userEmail').textContent =
-        session.user.email || '';
-
+      document.getElementById('userEmail').textContent = session.user.email || '';
       await loadScans();
-
     } catch (error) {
       console.error(error);
       showError(error.message);
