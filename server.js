@@ -888,13 +888,11 @@ app.get(
       data,
       error,
     } = await supa
-      .from('scans')
-      .select('*')
-      .eq(
-        'id',
-        req.params.id
-      )
-      .single();
+  .from('scans')
+  .select('*')
+  .eq('id', req.params.id)
+  .eq('user_id', user.id)  // ← دي اللي ناقصة
+  .single();
 
     if (error || !data) {
       return res.status(404).json({
